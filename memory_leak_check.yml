@@ -1,0 +1,34 @@
+name: Memory Leak Detection
+
+on:
+  pull_request:
+    branches:
+      - main  # Change this if your main branch is named differently
+
+jobs:
+  memory-leak-test:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Xcode
+        run: sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
+
+      - name: Install Dependencies
+        run: |
+          brew install swiftlint
+          xcodebuild -version
+
+      - name: Run Memory Leak Tests
+        run: xcodebuild test -scheme YourApp -destination 'platform=iOS Simulator,name=iPhone 14' | xcpretty
+
+      - name: Block Merge if Memory Leaks Found
+        run: |
+          if grep "🛑 Memory leaks detected!" MemoryLeakTrackerTests/MemoryLeakTests.swift; then
+            echo "❌ PR blocked due to memory leaks"
+            exit 1
+          else
+            echo "✅ No memory leaks detected"
+          fi
